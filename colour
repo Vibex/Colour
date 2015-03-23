@@ -7,11 +7,12 @@ interpret () {
 	while [[ "$@" != "" ]]; do
 		isColour=0
 		out=""
-		# Bold Toggle
+		# Bold Colours
 		if [ "$1" == "-b" ] || [ "$1" == "--bold" ] || [ "$1" == "--bright" ]; then
 			PLACE=8
 			shift
 			continue
+		# Normal Colours
 		elif [ "$1" == "-n" ] || [ "$1" == "--normal" ]; then
 			PLACE=0
 			shift
@@ -42,15 +43,13 @@ interpret () {
 			pos=$((PLACE + 7))
 		# Other
 		elif [ "$1" == "-o" ] || [ "$1" == "--other" ]; then
-			x="$(echo $2 | cut -d ':' -f 1)"
-			y="$(echo $2 | cut -d ':' -f 2)"
-			out=$(cat $FILE | grep "$x" | awk '{ print $'$y' }')
-			shift
+			out=$(cat $FILE | grep "$2" | awk '{ print $'$3' }')
+			shift; shift
 			isColour=1
-		# If the parameter is invalid output it
+		# If the parameter is invalid
 		else
-			out="$1"
-			isColour=1
+			echo "Param, $1, not recognized."
+			exit
 		fi
 		shift
 		# If the output was a colour then grab it from the file
@@ -72,7 +71,6 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "  -v, --version				Show the version number and exit"
 	echo 
 	echo "Options:"
-	echo "  -b, --bold, --bright			Output bold colours"
 	echo "  -f, --file [path]			Use a given file instead of .xresources"
 	echo 
 	echo "Colours:"
@@ -86,7 +84,7 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "  -m, --magenta				Output magenta"
 	echo "  -c, --cyan				Output cyan"
 	echo "  -w, --white				Output white"
-	echo "  -o, --other [pattern]:[spot]		Output another piece of information in the file"
+	echo "  -o, --other [pattern] [spot]		Output another piece of information in the file"
 	echo "					The pattern is found in the file"
 	echo "					The spot is the location of the information in the line"
 	echo
@@ -94,7 +92,7 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "  colour -a -u				Output black and blue"
 	echo "  colour -b -r				Output bold red"
 	echo "  colour -o background			Output the line containing 'background'"
-	echo "  colour -o foreground:2		Output the second element on the line containing 'foreground'"
+	echo "  colour -o foreground 2		Output the second element on the line containing 'foreground'"
 	exit
 fi
 if [ "$1" == "-v" ] || [ "$1" == "--version" ]; then
@@ -106,29 +104,25 @@ if [ "$1" == "-f" ] || [ "$1" == "--file" ]; then
 	shift; shift
 fi
 
-if [ "$1" == "-b" ] || [ "$1" == "--bold" ] || [ "$1" == "--bright" ]; then
-	PLACE=8
-	shift
-fi
-
 # If there are parameters then run them
 if [[ "$@" != "" ]]; then
 	interpret $@
 # Else output all the colours
 else
-	interpret "Black" -a -b -a
-	echo
-	interpret "Red" -r -b -r
-	echo
-	interpret "Green" -g -b -g
-	echo
-	interpret "Yellow" -y -b -y
-	echo
-	interpret "Blue" -u -b -u
-	echo
-	interpret "Magenta" -m -b -m
-	echo
-	interpret "Cyan" -c -b -c
-	echo
-	interpret "White" -w -b -w
+	echo "Black"
+	interpret -a -b -a
+	echo -e "\nRed"
+	interpret -r -b -r
+	echo -e "\nGreen"
+	interpret -g -b -g
+	echo -e "\nYellow"
+	interpret -y -b -y
+	echo -e "\nBlue"
+	interpret -u -b -u
+	echo -e "\nMagenta"
+	interpret -m -b -m
+	echo -e "\nCyan"
+	interpret -c -b -c
+	echo -e "\nWhite"
+	interpret -w -b -w
 fi
