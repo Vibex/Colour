@@ -1,0 +1,134 @@
+#!/usr/bin/bash
+FILE="/home/$USER/.xresources"
+
+# Interpret the colour params 
+interpret () {
+	PLACE=0
+	while [[ "$@" != "" ]]; do
+		isColour=0
+		out=""
+		# Bold Toggle
+		if [ "$1" == "-b" ] || [ "$1" == "--bold" ] || [ "$1" == "--bright" ]; then
+			PLACE=8
+			shift
+			continue
+		elif [ "$1" == "-n" ] || [ "$1" == "--normal" ]; then
+			PLACE=0
+			shift
+			continue
+		# Black
+		elif [ "$1" == "-a" ] || [ "$1" == "-bla" ] || [ "$1" == "--black" ]; then
+			pos="$PLACE"
+		# Red
+		elif [ "$1" == "-r" ] || [ "$1" == "--red" ]; then
+			pos=$((PLACE + 1))
+		# Green
+		elif [ "$1" == "-g" ] || [ "$1" == "--green" ]; then
+			pos=$((PLACE + 2))
+		# Yellow
+		elif [ "$1" == "-y" ] || [ "$1" == "--green" ]; then
+			pos=$((PLACE + 3))
+		# Blue
+		elif [ "$1" == "-u" ] || [ "$1" == "-blu" ] || [ "$1" == "--blue" ]; then
+			pos=$((PLACE + 4))
+		# Magenta
+		elif [ "$1" == "-m" ] || [ "$1" == "--magenta" ]; then
+			pos=$((PLACE + 5))
+		# cyan
+		elif [ "$1" == "-c" ] || [ "$1" == "--cyan" ]; then
+			pos=$((PLACE + 6))
+		# white
+		elif [ "$1" == "-w" ] || [ "$1" == "--white" ]; then
+			pos=$((PLACE + 7))
+		# Other
+		elif [ "$1" == "-o" ] || [ "$1" == "--other" ]; then
+			x="$(echo $2 | cut -d ':' -f 1)"
+			y="$(echo $2 | cut -d ':' -f 2)"
+			out=$(cat $FILE | grep "$x" | awk '{ print $'$y' }')
+			shift
+			isColour=1
+		# If the parameter is invalid output it
+		else
+			out="$1"
+			isColour=1
+		fi
+		shift
+		# If the output was a colour then grab it from the file
+		if [ "$isColour" == "0" ]; then
+			out=$(cat $FILE | grep "color$pos:" | awk '{ print $2 }')
+		fi
+		echo $out
+
+	done
+}
+
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+	echo "Usage: colour				Outputs all colours"
+	echo "Usage: colour [default]			Outputs info on colour"
+	echo "Usage: colour [options] [colours]	Output a selected colours"
+	echo
+	echo "Default:"	
+	echo "  -h, --help				Show this text and exit"
+	echo "  -v, --version				Show the version number and exit"
+	echo 
+	echo "Options:"
+	echo "  -b, --bold, --bright			Output bold colours"
+	echo "  -f, --file [path]			Use a given file instead of .xresources"
+	echo 
+	echo "Colours:"
+	echo "  -n, --normal				Output normal colours"
+	echo "  -b, --bold, --bright			Output bold colours"
+	echo "  -a, --black, -bla			Output black"
+	echo "  -r, --red				Output red"
+	echo "  -g, --green				Output green"
+	echo "  -y, --yellow				Output yellow"
+	echo "  -u, --blue, -blu			Output blue"
+	echo "  -m, --magenta				Output magenta"
+	echo "  -c, --cyan				Output cyan"
+	echo "  -w, --white				Output white"
+	echo "  -o, --other [pattern]:[spot]		Output another piece of information in the file"
+	echo "					The pattern is found in the file"
+	echo "					The spot is the location of the information in the line"
+	echo
+	echo "Examples:"
+	echo "  colour -a -u				Output black and blue"
+	echo "  colour -b -r				Output bold red"
+	echo "  colour -o background			Output the line containing 'background'"
+	echo "  colour -o foreground:2		Output the second element on the line containing 'foreground'"
+	exit
+fi
+if [ "$1" == "-v" ] || [ "$1" == "--version" ]; then
+	echo "colour 1.0"
+	exit
+fi
+if [ "$1" == "-f" ] || [ "$1" == "--file" ]; then
+	FILE=$2
+	shift; shift
+fi
+
+if [ "$1" == "-b" ] || [ "$1" == "--bold" ] || [ "$1" == "--bright" ]; then
+	PLACE=8
+	shift
+fi
+
+# If there are parameters then run them
+if [[ "$@" != "" ]]; then
+	interpret $@
+# Else output all the colours
+else
+	interpret "Black" -a -b -a
+	echo
+	interpret "Red" -r -b -r
+	echo
+	interpret "Green" -g -b -g
+	echo
+	interpret "Yellow" -y -b -y
+	echo
+	interpret "Blue" -u -b -u
+	echo
+	interpret "Magenta" -m -b -m
+	echo
+	interpret "Cyan" -c -b -c
+	echo
+	interpret "White" -w -b -w
+fi
