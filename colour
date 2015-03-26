@@ -48,16 +48,16 @@ interpret () {
 			isColour=1
 		# If the parameter is invalid
 		else
-			echo "Param, $1, not recognized."
-			exit
+			out="ERROR:Param, $1, not recognized."
+			isColour=1
 		fi
-		shift
+
 		# If the output was a colour then grab it from the file
 		if [ "$isColour" == "0" ]; then
 			out=$(cat $FILE | grep "color$pos:" | awk '{ print $2 }')
 		fi
 		echo $out
-
+		shift
 	done
 }
 
@@ -65,6 +65,7 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "Usage: colour				Outputs all colours"
 	echo "Usage: colour [default]			Outputs info on colour"
 	echo "Usage: colour [options] [colours]	Output a selected colours"
+	echo "Usage: colour [options] --cat		Output the contents of the file"
 	echo
 	echo "Default:"	
 	echo "  -h, --help				Show this text and exit"
@@ -72,6 +73,9 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo 
 	echo "Options:"
 	echo "  -f, --file [path]			Use a given file instead of .xresources"
+	echo 
+	echo "Cat:"
+	echo "  --cat					Output the contents of the file"
 	echo 
 	echo "Colours:"
 	echo "  -n, --normal				Output normal colours"
@@ -103,6 +107,10 @@ if [ "$1" == "-f" ] || [ "$1" == "--file" ]; then
 	FILE=$2
 	shift; shift
 fi
+if [ "$1" == "--cat" ]; then
+	cat $FILE
+	exit
+fi
 
 # If there are parameters then run them
 if [[ "$@" != "" ]]; then
@@ -125,4 +133,9 @@ else
 	interpret -c -b -c
 	echo -e "\nWhite"
 	interpret -w -b -w
+	echo -e "\nOther"
+	echo -e "\nBackground"
+	interpret -o background 2
+	echo -e "\nForeground"
+	interpret -o foreground 2
 fi
