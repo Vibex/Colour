@@ -1,46 +1,47 @@
 #!/usr/bin/bash
-FILE="/home/$USER/.xresources"
+FILE="/home/$USER/.Xresources"
+COL="0"
 
 # Interpret the colour params 
 interpret () {
-	PLACE=0
+	isbold=0
 	while [[ "$@" != "" ]]; do
 		isColour=0
 		out=""
 		# Bold Colours
 		if [ "$1" == "-b" ] || [ "$1" == "--bold" ] || [ "$1" == "--bright" ]; then
-			PLACE=8
+			isbold=1
 			shift
 			continue
 		# Normal Colours
 		elif [ "$1" == "-n" ] || [ "$1" == "--normal" ]; then
-			PLACE=0
+			isbold=0
 			shift
 			continue
 		# Black
 		elif [ "$1" == "-a" ] || [ "$1" == "-bla" ] || [ "$1" == "--black" ]; then
-			pos="$PLACE"
+			pos=0
 		# Red
 		elif [ "$1" == "-r" ] || [ "$1" == "--red" ]; then
-			pos=$((PLACE + 1))
+			pos=1
 		# Green
 		elif [ "$1" == "-g" ] || [ "$1" == "--green" ]; then
-			pos=$((PLACE + 2))
+			pos=2
 		# Yellow
 		elif [ "$1" == "-y" ] || [ "$1" == "--green" ]; then
-			pos=$((PLACE + 3))
+			pos=3
 		# Blue
 		elif [ "$1" == "-u" ] || [ "$1" == "-blu" ] || [ "$1" == "--blue" ]; then
-			pos=$((PLACE + 4))
+			pos=4
 		# Magenta
 		elif [ "$1" == "-m" ] || [ "$1" == "--magenta" ]; then
-			pos=$((PLACE + 5))
+			pos=5
 		# cyan
 		elif [ "$1" == "-c" ] || [ "$1" == "--cyan" ]; then
-			pos=$((PLACE + 6))
+			pos=6
 		# white
 		elif [ "$1" == "-w" ] || [ "$1" == "--white" ]; then
-			pos=$((PLACE + 7))
+			pos=7
 		# Other
 		elif [ "$1" == "-o" ] || [ "$1" == "--other" ]; then
 			out=$(cat $FILE | grep "$2" | awk '{ print $'$3' }')
@@ -51,12 +52,29 @@ interpret () {
 			out="ERROR:Param, $1, not recognized."
 			isColour=1
 		fi
+		if [ "$isbold" == "1" ]; then
+			pos=$((8 + pos))
+		fi
 
 		# If the output was a colour then grab it from the file
 		if [ "$isColour" == "0" ]; then
 			out=$(cat $FILE | grep "color$pos:" | awk '{ print $2 }')
+			if [ "$COL" != "0" ]; then
+				att=$pos
+				att2=0
+				if [ "$isbold" == 1 ]; then
+					att=$((att - 8))
+					att2=1
+				fi
+				if [ "$COL" == "1" ]; then
+					att=$((att + 30))	
+				elif [ "$COL" == "2" ]; then
+					att=$((att + 40))	
+				fi
+				out="\033[${att2}m\033[${att}m${out}\033[0m"
+			fi
 		fi
-		echo $out
+		echo -e "$out"
 		shift
 	done
 }
@@ -64,8 +82,8 @@ interpret () {
 if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "Usage: colour				Outputs all colours"
 	echo "Usage: colour [default]			Outputs info on colour"
-	echo "Usage: colour [options] [colours]	Output a selected colours"
-	echo "Usage: colour [options] --cat		Output the contents of the file"
+	echo "Usage: colour [options] [col] [colours]	Output a selected colours"
+	echo "Usage: colour [options] [col] --cat	Output the contents of the file"
 	echo
 	echo "Default:"	
 	echo "  -h, --help				Show this text and exit"
@@ -73,6 +91,12 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo 
 	echo "Options:"
 	echo "  -f, --file [path]			Use a given file instead of .xresources"
+	echo 
+	echo "Col:"
+	echo "  --colourize, --col [mode]		Output in colour, defaults to mode 0"
+	echo "					Mode 0 prints the hexcode without colour"
+	echo "					Mode 1 prints the hexcode in colour"
+	echo "					Mode 2 prints the background in colour"
 	echo 
 	echo "Cat:"
 	echo "  --cat					Output the contents of the file"
@@ -107,6 +131,14 @@ if [ "$1" == "-f" ] || [ "$1" == "--file" ]; then
 	FILE=$2
 	shift; shift
 fi
+if [ "$1" == "--col" ] || [ "$1" == "--colourize" ]; then
+	if [ "$2" == "0" ] || [ "$2" == "1" ] || [ "$2" == "2" ]; then
+		COL=$2
+		shift; shift
+	else
+		shift
+	fi
+fi
 if [ "$1" == "--cat" ]; then
 	cat $FILE
 	exit
@@ -133,9 +165,4 @@ else
 	interpret -c -b -c
 	echo -e "\nWhite"
 	interpret -w -b -w
-	echo -e "\nOther"
-	echo -e "\nBackground"
-	interpret -o background 2
-	echo -e "\nForeground"
-	interpret -o foreground 2
 fi
