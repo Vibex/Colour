@@ -2,22 +2,30 @@
 FILE="/home/$USER/.Xresources"
 COL="0"
 
+VERSION="1.1.1"
+
 # Interpret the colour params 
 interpret () {
-	isbold=0
+	isBold=0
 	while [[ "$@" != "" ]]; do
-		isColour=0
+		# Temp variables for each colour
+		isColour=1
 		out=""
+		pos=0
+
+		# Set bright or normal
 		# Bold Colours
 		if [ "$1" == "-b" ] || [ "$1" == "--bold" ] || [ "$1" == "--bright" ]; then
-			isbold=1
+			isBold=1
 			shift
 			continue
-		# Normal Colours
+			# Normal Colours
 		elif [ "$1" == "-n" ] || [ "$1" == "--normal" ]; then
-			isbold=0
+			isBold=0
 			shift
 			continue
+
+		# Colours
 		# Black
 		elif [ "$1" == "-a" ] || [ "$1" == "-bla" ] || [ "$1" == "--black" ]; then
 			pos=0
@@ -45,45 +53,49 @@ interpret () {
 		# Other
 		elif [ "$1" == "-o" ] || [ "$1" == "--other" ]; then
 			out=$(cat $FILE | grep "$2" | awk '{ print $'$3' }')
+			isColour=0
 			shift; shift
-			isColour=1
 		# If the parameter is invalid
 		else
 			out="ERROR:Param, $1, not recognized."
-			isColour=1
+			isColour=0
 		fi
-		if [ "$isbold" == "1" ]; then
+		if [ "$isBold" == "1" ]; then
 			pos=$((8 + pos))
 		fi
 
 		# If the output was a colour then grab it from the file
-		if [ "$isColour" == "0" ]; then
+		if [ "$isColour" == "1" ]; then
+			# Get output
 			out=$(cat $FILE | grep "color$pos:" | awk '{ print $2 }')
+
+			# Colourize
 			if [ "$COL" != "0" ]; then
 				att=$pos
 				att2=0
-				if [ "$isbold" == 1 ]; then
+				if [ "$isBold" == 1 ]; then
 					att=$((att - 8))
 					att2=1
 				fi
-				if [ "$COL" == "1" ]; then
-					att=$((att + 30))	
-				elif [ "$COL" == "2" ]; then
-					att=$((att + 40))	
+				att=$((att + 30))	
+				if [ "$COL" == "2" ]; then
+					att2="${att2};7"
 				fi
 				out="\033[${att2}m\033[${att}m${out}\033[0m"
 			fi
 		fi
+
+		# Output
 		echo -e "$out"
 		shift
 	done
 }
 
+# Help Menu
 if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
-	echo "Usage: colour				Outputs all colours"
 	echo "Usage: colour [default]			Outputs info on colour"
+	echo "Usage: colour [options]			Outputs all colours"
 	echo "Usage: colour [options] [col] [colours]	Output a selected colours"
-	echo "Usage: colour [options] [col] --cat	Output the contents of the file"
 	echo
 	echo "Default:"	
 	echo "  -h, --help				Show this text and exit"
@@ -93,13 +105,10 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "  -f, --file [path]			Use a given file instead of .xresources"
 	echo 
 	echo "Col:"
-	echo "  --colourize, --col [mode]		Output in colour, defaults to mode 0"
+	echo "  --colourize, --col [mode]		Output in colour, defaults to mode 1"
 	echo "					Mode 0 prints the hexcode without colour"
 	echo "					Mode 1 prints the hexcode in colour"
 	echo "					Mode 2 prints the background in colour"
-	echo 
-	echo "Cat:"
-	echo "  --cat					Output the contents of the file"
 	echo 
 	echo "Colours:"
 	echo "  -n, --normal				Output normal colours"
@@ -119,29 +128,31 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
 	echo "Examples:"
 	echo "  colour -a -u				Output black and blue"
 	echo "  colour -b -r				Output bold red"
-	echo "  colour -o background			Output the line containing 'background'"
 	echo "  colour -o foreground 2		Output the second element on the line containing 'foreground'"
 	exit
 fi
+
+# Versin
 if [ "$1" == "-v" ] || [ "$1" == "--version" ]; then
-	echo "colour 1.0"
+	echo "colour $VERSION"
 	exit
 fi
+
+# Set file
 if [ "$1" == "-f" ] || [ "$1" == "--file" ]; then
 	FILE=$2
 	shift; shift
 fi
+
+# Set colourize
 if [ "$1" == "--col" ] || [ "$1" == "--colourize" ]; then
-	if [ "$2" == "0" ] || [ "$2" == "1" ] || [ "$2" == "2" ]; then
+	if [ "$2" == "0" ] || [ "$2" == "1" ] || [ "$2" == "2" ] || [ "$2" == "3" ]; then
 		COL=$2
 		shift; shift
 	else
+		COL=1
 		shift
 	fi
-fi
-if [ "$1" == "--cat" ]; then
-	cat $FILE
-	exit
 fi
 
 # If there are parameters then run them
@@ -149,6 +160,7 @@ if [[ "$@" != "" ]]; then
 	interpret $@
 # Else output all the colours
 else
+
 	echo "Black"
 	interpret -a -b -a
 	echo -e "\nRed"
